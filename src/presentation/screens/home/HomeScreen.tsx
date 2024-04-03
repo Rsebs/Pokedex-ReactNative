@@ -7,7 +7,7 @@ import { getPokemons } from '../../../actions/pokemons';
 export const HomeScreen = () => {
   const { isLoading, data } = useQuery({
     queryKey: ['pokemons'], // Key de la petición que para que se maneje en caché
-    queryFn: getPokemons, // La función encargada para realizar la petición
+    queryFn: () => getPokemons(0), // La función encargada para realizar la petición
     staleTime: 1000 * 60 * 60, // 60 minutes | Mantiene la petición "Desactualizada" durante un tiempo, pasado el tiempo se realiza una petición nueva
   });
 
