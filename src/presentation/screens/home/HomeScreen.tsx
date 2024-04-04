@@ -1,7 +1,7 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { getPokemons } from '../../../actions/pokemons';
 import { PokeballBg } from '../../components/ui/PokeballBg';
 import { FlatList } from 'react-native-gesture-handler';
@@ -11,6 +11,7 @@ import { PokemonCard } from '../../components/pokemons/PokemonCard';
 
 export const HomeScreen = () => {
   const { top } = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   // Forma tradicional de una petición http
   // const { isLoading, data: pokemons = []} = useQuery({
@@ -19,12 +20,18 @@ export const HomeScreen = () => {
   //   staleTime: 1000 * 60 * 60, // 60 minutes | Mantiene la petición "Desactualizada" durante un tiempo, pasado el tiempo se realiza una petición nueva
   // });
 
-  const { isLoading, data, fetchNextPage } = useInfiniteQuery({
+  const { data, fetchNextPage } = useInfiniteQuery({
     queryKey: ['pokemons', 'infinite'],
     initialPageParam: 0,
-    queryFn: params => getPokemons(params.pageParam),
-    getNextPageParam: (lastPage, pages) => pages.length,
     staleTime: 1000 * 60 * 60,
+    queryFn: async params => {
+      const pokemons = await getPokemons(params.pageParam);
+      pokemons.forEach(pokemon => {
+        queryClient.setQueryData(['pokemon', pokemon.id], pokemon);
+      });
+      return pokemons;
+    },
+    getNextPageParam: (lastPage, pages) => pages.length,
   });
 
   return (
