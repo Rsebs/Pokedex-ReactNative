@@ -11,17 +11,19 @@ import {
   getPokemonsByIds,
 } from '../../../actions/pokemons';
 import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
+import { useDebounceValue } from '../../hooks/useDebounceValue';
 
 export const SearchScreen = () => {
   const { top } = useSafeAreaInsets();
   const [term, setTerm] = useState('');
+
+  const debounceValue = useDebounceValue(term);
 
   const { isLoading, data: pokemonNameList = [] } = useQuery({
     queryKey: ['pokemons', 'all'],
     queryFn: getPokemonNamesWithId,
   });
 
-  // todo: aplicar debounce
   const pokemonNameIdList = useMemo(() => {
     // Es un número
     if (!isNaN(Number(term))) {
@@ -37,7 +39,7 @@ export const SearchScreen = () => {
     return pokemonNameList.filter(pokemonList =>
       pokemonList.name.includes(term.toLowerCase()),
     );
-  }, [term]);
+  }, [debounceValue]);
 
   const { isLoading: isLoadingPokemons, data: pokemons = [] } = useQuery({
     queryKey: ['pokemons', 'by', pokemonNameIdList],
