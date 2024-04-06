@@ -1,8 +1,9 @@
-import React from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { globalTheme } from '../../../config/theme/globalTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Text, TextInput } from 'react-native-paper';
 import { Pokemon } from '../../../domain/entities/pokemon';
 import { PokemonCard } from '../../components/pokemons/PokemonCard';
 import { useQuery } from '@tanstack/react-query';
@@ -10,13 +11,30 @@ import { getPokemonNamesWithId } from '../../../actions/pokemons';
 
 export const SearchScreen = () => {
   const { top } = useSafeAreaInsets();
+  const [term, setTerm] = useState('');
 
   const { isLoading, data: pokemonNameList = [] } = useQuery({
     queryKey: ['pokemons', 'all'],
     queryFn: getPokemonNamesWithId,
   });
 
-  console.log(pokemonNameList);
+  // todo: aplicar debounce
+  const pokemonNameIdList = useMemo(() => {
+    // Es un número
+    if (!isNaN(Number(term))) {
+      const pokemon = pokemonNameList.find(
+        pokemonList => pokemonList.id === Number(term),
+      );
+      return pokemon ? [pokemon] : [];
+    }
+
+    if (term.length === 0) return [];
+    if (term.length < 3) return [];
+
+    return pokemonNameList.filter(pokemonList =>
+      pokemonList.name.includes(term.toLowerCase()),
+    );
+  }, [term]);
 
   return (
     <View style={[globalTheme.globalMargin, { paddingTop: top + 10 }]}>
@@ -25,8 +43,8 @@ export const SearchScreen = () => {
         mode="flat"
         autoFocus
         autoCorrect={false}
-        onChangeText={value => console.log(value)}
-        value={'hola mundo'}
+        onChangeText={setTerm}
+        value={term}
       />
 
       {isLoading ? (
@@ -41,6 +59,8 @@ export const SearchScreen = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      <Text>{JSON.stringify(pokemonNameIdList, null, 2)}</Text>
     </View>
   );
 };
