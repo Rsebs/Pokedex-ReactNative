@@ -3,11 +3,14 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { globalTheme } from '../../../config/theme/globalTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, Text, TextInput } from 'react-native-paper';
-import { Pokemon } from '../../../domain/entities/pokemon';
+import { ActivityIndicator, TextInput } from 'react-native-paper';
 import { PokemonCard } from '../../components/pokemons/PokemonCard';
 import { useQuery } from '@tanstack/react-query';
-import { getPokemonNamesWithId } from '../../../actions/pokemons';
+import {
+  getPokemonNamesWithId,
+  getPokemonsByIds,
+} from '../../../actions/pokemons';
+import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
 
 export const SearchScreen = () => {
   const { top } = useSafeAreaInsets();
@@ -36,6 +39,17 @@ export const SearchScreen = () => {
     );
   }, [term]);
 
+  const { isLoading: isLoadingPokemons, data: pokemons = [] } = useQuery({
+    queryKey: ['pokemons', 'by', pokemonNameIdList],
+    queryFn: () =>
+      getPokemonsByIds(pokemonNameIdList.map(pokemon => pokemon.id)),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  if (isLoading) {
+    return <FullScreenLoader />;
+  }
+
   return (
     <View style={[globalTheme.globalMargin, { paddingTop: top + 10 }]}>
       <TextInput
@@ -47,20 +61,19 @@ export const SearchScreen = () => {
         value={term}
       />
 
-      {isLoading ? (
+      {isLoadingPokemons ? (
         <ActivityIndicator style={{ paddingTop: 20 }} />
       ) : (
         <FlatList
-          data={[] as Pokemon[]}
+          data={pokemons}
           keyExtractor={(pokemon, index) => `${pokemon.id}-${index}`}
           numColumns={2}
           style={{ paddingTop: top + 20 }}
           renderItem={({ item: pokemon }) => <PokemonCard pokemon={pokemon} />}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={<View style={{ height: 120 }} />}
         />
       )}
-
-      <Text>{JSON.stringify(pokemonNameIdList, null, 2)}</Text>
     </View>
   );
 };
